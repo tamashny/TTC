@@ -1,0 +1,7 @@
+This is nowECC Version 2.22 
+Mapping: F021-16MB 
+
+Ignoring the root name command since the output file is not in COFF/ELF format.
+ECC calculation from 0x000A0000 to 0x002FFFFF
+*** Writing only ECC section to file -> ./build/app_jtag_ecc.hex 
+No Errors

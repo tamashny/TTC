@@ -1,0 +1,118 @@
+;========================================================================
+; Setup CPU
+
+SYStem.RESet
+SYStem.CPU TMS570LS3137-ZWT
+SYStem.JtagClock CTCK 25MHz
+SYStem.MemAccess DAP
+ETM.OFF
+SYStem.Up
+
+;========================================================================
+; Flash declaration
+
+FLASH.RESet
+
+; Program flash
+FLASH.Create  1. 0x000A0000--0x0017FFFF 0x20000 TARGET Byte 0. /EraseALIAS 0xf0414000--0xf042FFFF  ; Bank 0
+FLASH.Create  2. 0x00180000--0x002FFFFF 0x20000 TARGET Byte 1. /EraseALIAS 0xf0430000--0xf045FFFF  ; Bank 1
+
+; Program flash ECC
+FLASH.Create  1. 0xf0414000--0xF042FFFF  0x4000 TARGET Byte 0. /EraseALIAS 0x000A0000--0x0017FFFF  ; Bank 0
+FLASH.Create  2. 0xF0430000--0xF045FFFF  0x4000 TARGET Byte 1. /EraseALIAS 0x00180000--0x002FFFFF  ; Bank 1
+
+; use flash algorithm with DualPort but WITHOUT automatic ECC generation
+FLASH.TARGET 0x08000000 EAHB:0x08001000 0x4000 ~~/demo/arm/flash/byte_be/f021r4noecc.bin /DualPort
+
+FLASH.CLocK auto
+
+MAP.BUS16 0xF0400000--0xF045FFFF
+
+;========================================================================
+; Flash programming
+
+DIALOG.YESNO "Program application to flash memory?"
+LOCAL &progflash
+ENTRY &progflash
+
+IF &progflash 
+(
+    ; write Program flash and ECC
+    FLASH.ReProgram 0x000A0000--0x002FFFFF /Erase
+    FLASH.ReProgram 0xf0414000--0xf045ffff /Erase
+    Data.LOAD.auto ~~~~/build/app_jtag_ecc.hex
+    Data.LOAD.auto ~~~~/build/app_jtag.hex
+    FLASH.ReProgram off
+
+    Print "Application flashed..."
+)
+;========================================================================
+; load application symbols
+Print "Loading Application symbols..."
+Data.LOAD.auto .\build\app.out /noCODE
+
+Print "Application symbols loaded..."
+
+;========================================================================
+; breakpoint configuration
+
+; use onchip breakpoints
+map.bonchip
+
+;========================================================================
+; setup view
+
+; Switch to high level view (only C, no assemler code)
+Mode.HLL
+
+; Set format of data values to hex and decimal
+setup.var %HEX %Decimal %E
+
+;========================================================================
+; setup window configuration
+
+DIALOG.YESNO "reset window configuration?"
+entry &reswin
+if &reswin
+(
+    TOOLBAR ON
+    STATUSBAR ON
+    FramePOS 28.125,16.071,,,Maximized
+    WinPAGE.RESet
+    
+    WinPAGE.Create P000
+    
+    WinCLEAR
+    WinPOS 103.63 0.0 52. 29. 0. 0. W001
+    Register /Spotlight
+    
+    WinPOS 0.0 0.0 99. 44. 13. 1. W000
+    WinTABS 10. 10. 25. 62.
+    Data.List
+    
+    WinPOS 103.5 33.143 52. 23. 0. 1. W002
+    WinTABS 21. 21.
+    sYmbol.Browse.Function
+ 
+    WinPOS 160.25 0.0 75. 49. 0. 0. W004
+    Var.Watch
+ 
+    WinPOS 160.25 54.571 77. 5. 10. 1. W005
+    rt
+    
+    WinPOS 0.0 49.643 99. 7. 23. 1. W003
+    WinTABS 0. 0. 0. 0. 0. 0. 0.
+    Break.List
+ 
+    WinPAGE.select P000
+)
+
+; Add reset toolbar
+menu.REPROGRAM "bsp\toolbar.men"
+  
+;======================
+;===  end of script ===
+;======================
+
+ENDDO
+

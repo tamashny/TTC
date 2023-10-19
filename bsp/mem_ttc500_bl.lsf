@@ -1,0 +1,119 @@
+/****************************************************************************************/
+/* Module version: 1.00                                                                 */
+/****************************************************************************************/
+
+/* Autoinitialization of Variables at Run Time */
+--rom_model
+
+/* stack size configuration */
+--stack_size=0x2FE0
+
+/* prohibit dynamic memory allocation */
+--heap_size=0x0
+
+/* Definiton of the different memory sections */
+MEMORY
+{
+    /* flash */
+    apdb_sec              (R)  : origin=0x000A0000 length=0x00000080, fill = 0xFFFFFFFF /* APDB: beginning of sector 8  (flash bank 0) */
+    crc_sec               (R)  : origin=0x000A0080 length=0x00000080, fill = 0xFFFFFFFF /* CRC table                                   */
+    flash                 (RX) : origin=0x000A0100 length=0x0025FF00 /* internal flash (flash banks 0 and 1): 0x300000 - 0xA0100       */
+    ext_flash             (R)  : origin=0x64000000 length=0x007FFFF8 /* external flash (size reduced for CRC calculation)              */
+    cfg_flash             (R)  : origin=0xF0200000 length=0x00010000 /* configuration flash                                            */
+    
+    /* (unprotected) internal RAM */
+    stacks                (RW) : origin=0x08000020 length=0x00002FE0
+    ram                   (RW) : origin=0x08003000 length=0x00035000
+
+    /* start protected I/O driver RAM => 32 kBytes */
+    io_driver_data_normal (RW) : origin=0x08038000 length=0x00007AE0
+    io_driver_data_common (RW) : origin=0x0803FAE0 length=0x00000400
+    shared_mem            (RW) : origin=0x0803FEE0 length=0x00000120
+    /* end protected I/O driver RAM */
+    
+    /* external RAM */
+    ext_ram               (RW) : origin=0x60000000 length=0x00200000
+}
+
+SECTIONS
+{
+    .app_apdb: palign = 8 {*(.APDB_SEC)} load=apdb_sec
+
+    GROUP:
+    {
+        .csm_code        : palign = 8 { *(.CSM_CODE) }
+        .csm_const       : palign = 8 { *(.CSM_CONST) }
+        .io_driver_code  : palign = 8 { *(.IO_DRIVER_CODE) }
+        .io_driver_const : palign = 8 { *(.IO_DRIVER_CONST) }
+    } > flash
+    
+    .cinit           : palign = 8 {} > flash
+    .const           : palign = 8 {} > flash
+    
+    .stack :
+    {
+        _StackUSER_END_  = .;
+        _StackUSER_      = . + (0x2FE0 - (0x300 + 0x400 + 0x200 + 0x200 + 0x2400)); /* => 0xE0 */
+        
+        _StackFIQ_END_   = _StackUSER_;
+        _StackFIQ_       = _StackUSER_  + 0x300;
+        
+        _StackIRQ_END_   = _StackFIQ_;
+        _StackIRQ_       = _StackFIQ_   + 0x400;
+        
+        _StackABORT_END_ = _StackIRQ_;
+        _StackABORT_     = _StackIRQ_   + 0x200;
+        
+        _StackUND_END_   = _StackABORT_;
+        _StackUND_       = _StackABORT_ + 0x200;
+        
+        _StackSUPER_END_ = _StackUND_;
+        _StackSUPER_     = _StackUND_   + 0x2400;
+    } > stacks /* SOFTWARE SYSTEM STACK            */
+    
+    GROUP: 
+    {
+        .data       : {}
+        
+        /* Allocate uninitialized sections.         */
+        .bss        : {}
+        .sysmem     : {}
+    } > ram
+
+    GROUP:
+    {
+        .CSM_VAR
+        {
+            _ProtectedRAM_  = .;
+            *(.CSM_VAR_ZERO_INIT_UNSPECIFIED)
+            *(.CSM_VAR_NO_INIT_UNSPECIFIED)
+        }
+        
+        .IO_DRIVER_VAR_NORMAL
+        {
+            *(.IO_DRIVER_DATA_NORMAL)
+        }
+    } > io_driver_data_normal
+
+    GROUP:
+    {
+        .IO_DRIVER_VAR_COMMON
+        {
+            *(.IO_DRIVER_DATA_COMMON)
+        }
+    } > io_driver_data_common
+
+/************************************************/
+/*    DO NOT MODIFY ANYTHING ABOVE THIS LINE    */
+/************************************************/
+
+    GROUP :
+    {
+        .text           : palign = 8 {}
+        .init_array     : palign = 8 {}
+    } > flash
+    
+    .app_ext: palign = 8 {*(.EXT_FLASH)} load=ext_flash
+    
+    .app_cfg: palign = 8 {*(.CFG_FLASH)} load=cfg_flash
+}

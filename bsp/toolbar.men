@@ -1,0 +1,80 @@
+ADD
+TOOLBAR
+(
+    SEPARATOR
+    TOOLITEM "HY-TTC 500 Family &Attach" 
+    (
+        SYStem.attach
+    )
+[
+      RRR      
+      RRR      
+     RR RR     
+     RR RR     
+    RR   RR    
+    RR   RR    
+   RR     RR   
+   RR     RR   
+  RRRRRRRRRRR  
+  RR       RR  
+ RR         RR 
+ RR         RR 
+RR           RR
+RR           RR
+]
+)
+
+ADD
+TOOLBAR
+(
+    SEPARATOR
+    TOOLITEM "HY-TTC 500 Family In Target &Reset" 
+    (
+        SYStem.Up
+        SYStem.RESetTarget
+    )
+[
+RRRRRRRRR   
+RR     RRR 
+RR       RR
+RR       RR
+RR       RR
+RR     RRR
+RRRRRRRR
+RR RR
+RR  RR     
+RR   RR    
+RR    RR   
+RR     RR  
+RR      RR 
+RR       RR
+]
+)
+
+ADD
+TOOLBAR
+(
+    SEPARATOR
+    TOOLITEM "HY-TTC 500 Family In Target &Reset and Run" 
+    (
+        SYStem.Up
+        SYStem.RESetTarget
+        go
+    )
+[
+RRRRRRRRR    
+RR     RRR 
+RR       RR
+RR       RR
+RR       RR
+RR     RRR   
+RRRRRRRR   RRR 
+RR RR      R  R 
+RR  RR     RRR  
+RR   RR    R R    
+RR    RR   R  R
+RR     RR  
+RR      RR 
+RR       RR
+]
+)
